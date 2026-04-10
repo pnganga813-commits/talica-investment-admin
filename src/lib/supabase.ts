@@ -14,6 +14,7 @@ export type Order = {
   address: string;
   product_variant: string;
   quantity: number;
+  price: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
 };

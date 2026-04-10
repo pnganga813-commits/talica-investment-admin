@@ -141,21 +141,36 @@ CREATE TABLE IF NOT EXISTS public.orders (
   address text,
   product_variant text not null,
   quantity integer not null default 1,
-  status text check (status in ('pending', 'processing', 'shipped', 'delivered', 'cancelled')) default 'pending',
+  price numeric not null default 0,
+  status text default 'pending',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Ensure price column exists if table was created before
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='price') THEN
+        ALTER TABLE public.orders ADD COLUMN price numeric not null default 0;
+    END IF;
+END $$;
 
 -- Enable RLS on orders
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 
 -- Allow anyone to insert orders (for customers)
+DROP POLICY IF EXISTS "Anyone can insert orders" ON public.orders;
 CREATE POLICY "Anyone can insert orders" ON public.orders
   FOR INSERT WITH CHECK (true);
 
--- Allow authenticated users to manage orders
+-- Allow authenticated users to view orders
+DROP POLICY IF EXISTS "Authenticated users can view orders" ON public.orders;
+CREATE POLICY "Authenticated users can view orders" ON public.orders
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Allow authenticated users to manage orders (update/delete)
 DROP POLICY IF EXISTS "Authenticated users can manage orders" ON public.orders;
 CREATE POLICY "Authenticated users can manage orders" ON public.orders
-  FOR ALL USING (auth.uid() IS NOT NULL);
+  FOR ALL USING (auth.role() = 'authenticated');
 
 -- 6. Storage Setup (Run this to fix photo/video upload issues)
 -- Create the bucket if it doesn't exist
@@ -208,7 +223,7 @@ DROP POLICY IF EXISTS "Authenticated users can manage hero_slides" ON public.her
 CREATE POLICY "Authenticated users can manage hero_slides" ON public.hero_slides
   FOR ALL USING (auth.uid() IS NOT NULL);
 
--- 8. Bootstrap Admin (Run this manually in SQL Editor if needed)
--- UPDATE public.profiles SET role = 'admin' WHERE id = 'YOUR_USER_ID';
--- OR
--- UPDATE public.profiles SET role = 'admin' WHERE id IN (SELECT id FROM auth.users WHERE email = 'pnganga813@gmail.com');
+-- 9. Enable Realtime for tables
+ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.hero_slides;

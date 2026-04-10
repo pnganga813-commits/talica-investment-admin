@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase, Order } from '../lib/supabase';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import { Search, Filter, ChevronDown, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Orders() {
@@ -10,13 +10,27 @@ export default function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchOrders();
+
+    // Real-time subscription for orders
+    const subscription = supabase
+      .channel('orders_page_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        fetchOrders();
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (isRefresh = false) => {
     try {
+      if (isRefresh) setRefreshing(true);
       setError(null);
       const { data, error } = await supabase
         .from('orders')
@@ -34,6 +48,7 @@ export default function Orders() {
       }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -81,9 +96,19 @@ export default function Orders() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Orders</h1>
-        <p className="mt-1 text-xs md:text-sm text-gray-500">Manage your Cash-on-Delivery orders</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Orders</h1>
+          <p className="mt-1 text-xs md:text-sm text-gray-500">Manage your Cash-on-Delivery orders</p>
+        </div>
+        <button
+          onClick={() => fetchOrders(true)}
+          disabled={refreshing}
+          className="inline-flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </div>
 
       {error && (
@@ -166,7 +191,7 @@ export default function Orders() {
                   <tr key={order.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{order.product_variant}</div>
-                      <div className="text-[10px] text-gray-500 font-medium">Qty: {order.quantity}</div>
+                      <div className="text-[10px] text-gray-500 font-medium">Qty: {order.quantity} | KSh {(order.price || 0).toLocaleString()}</div>
                       <div className="text-[10px] text-gray-400 mt-1 font-medium">
                         {format(new Date(order.created_at), 'MMM d, yyyy HH:mm')}
                       </div>
