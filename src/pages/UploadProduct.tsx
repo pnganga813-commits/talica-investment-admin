@@ -20,6 +20,10 @@ export default function UploadProduct() {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [stockQuantity, setStockQuantity] = useState('1');
+  const [condition, setCondition] = useState('New');
+  const [hasDiscount, setHasDiscount] = useState(false);
+  const [originalPrice, setOriginalPrice] = useState('');
+  const [colors, setColors] = useState('');
   
   // File States
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -117,6 +121,10 @@ export default function UploadProduct() {
             price: parseFloat(price),
             category,
             stock_quantity: parseInt(stockQuantity, 10),
+            condition,
+            has_discount: hasDiscount,
+            original_price: hasDiscount ? parseFloat(originalPrice) : 0,
+            colors,
             media_url: photoUrl,
             video_url: videoUrl,
             created_by: user.id,
@@ -282,6 +290,71 @@ ON CONFLICT (id) DO UPDATE SET role = 'admin';`}
                 onChange={(e) => setStockQuantity(e.target.value)}
                 className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-gray-50/50 focus:bg-white"
                 placeholder="1"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Condition</label>
+              <select
+                required
+                value={condition}
+                onChange={(e) => setCondition(e.target.value)}
+                className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-gray-50/50 focus:bg-white appearance-none"
+              >
+                <option value="New">New</option>
+                <option value="Like New">Like New</option>
+                <option value="Refurbished">Refurbished</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2 space-y-4">
+              <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <input
+                  type="checkbox"
+                  id="hasDiscount"
+                  checked={hasDiscount}
+                  onChange={(e) => {
+                    setHasDiscount(e.target.checked);
+                    if (e.target.checked && price) {
+                      const currentPrice = parseFloat(price);
+                      // If user checks discount, we set original price to current price and update price to 80%
+                      setOriginalPrice(price);
+                      setPrice((currentPrice * 0.8).toFixed(2));
+                    }
+                  }}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="hasDiscount" className="text-sm font-bold text-blue-800 cursor-pointer">
+                  Apply 20% discount
+                </label>
+              </div>
+
+              {hasDiscount && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Original Price (KSh)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">KSh</span>
+                    <input
+                      type="number"
+                      value={originalPrice}
+                      onChange={(e) => setOriginalPrice(e.target.value)}
+                      className="block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-gray-50/50 focus:bg-white"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-blue-600 font-medium italic">* Selling price is currently set to 20% OFF this value</p>
+                </div>
+              )}
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Colors</label>
+              <input
+                type="text"
+                value={colors}
+                onChange={(e) => setColors(e.target.value)}
+                className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-gray-50/50 focus:bg-white"
+                placeholder="e.g. Black, White, Brown, Grey, Blue"
               />
             </div>
 

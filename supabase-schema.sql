@@ -58,6 +58,10 @@ CREATE TABLE IF NOT EXISTS public.products (
   title text not null,
   description text,
   price numeric not null default 0,
+  original_price numeric default 0,
+  has_discount boolean default false,
+  condition text not null default 'New',
+  colors text default '',
   category text,
   stock_quantity integer not null default 0,
   media_url text,
@@ -65,6 +69,23 @@ CREATE TABLE IF NOT EXISTS public.products (
   created_by uuid references auth.users not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Ensure new columns exist if table was created before
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='condition') THEN
+        ALTER TABLE public.products ADD COLUMN condition text not null default 'New';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='has_discount') THEN
+        ALTER TABLE public.products ADD COLUMN has_discount boolean default false;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='original_price') THEN
+        ALTER TABLE public.products ADD COLUMN original_price numeric default 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='colors') THEN
+        ALTER TABLE public.products ADD COLUMN colors text default '';
+    END IF;
+END $$;
 
 -- Enable RLS on products
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;

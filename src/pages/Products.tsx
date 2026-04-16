@@ -9,6 +9,10 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  original_price?: number;
+  has_discount?: boolean;
+  condition: string;
+  colors?: string;
   category: string;
   stock_quantity: number;
   media_url: string;
@@ -193,6 +197,10 @@ export default function Products() {
           title: editingProduct.title,
           description: editingProduct.description,
           price: editingProduct.price,
+          original_price: editingProduct.has_discount ? editingProduct.original_price : 0,
+          has_discount: editingProduct.has_discount,
+          condition: editingProduct.condition,
+          colors: editingProduct.colors,
           category: editingProduct.category,
           stock_quantity: editingProduct.stock_quantity,
           media_url: photoUrl,
@@ -442,8 +450,75 @@ export default function Products() {
                     />
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Condition</label>
+            <select
+              required
+              value={editingProduct.condition || 'New'}
+              onChange={(e) => setEditingProduct({...editingProduct, condition: e.target.value})}
+              className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-gray-50/50 focus:bg-white appearance-none"
+            >
+              <option value="New">New</option>
+              <option value="Like New">Like New</option>
+              <option value="Refurbished">Refurbished</option>
+            </select>
+          </div>
+
+          <div className="md:col-span-2 space-y-4">
+            <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
+              <input
+                type="checkbox"
+                id="hasDiscountEdit"
+                checked={editingProduct.has_discount || false}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  if (checked && editingProduct.price) {
+                    setEditingProduct({
+                      ...editingProduct, 
+                      has_discount: true,
+                      original_price: editingProduct.price,
+                      price: parseFloat((editingProduct.price * 0.8).toFixed(2))
+                    });
+                  } else {
+                    setEditingProduct({...editingProduct, has_discount: checked});
+                  }
+                }}
+                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="hasDiscountEdit" className="text-sm font-bold text-blue-800 cursor-pointer">
+                Apply 20% discount
+              </label>
+            </div>
+
+            {editingProduct.has_discount && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Original Price (KSh)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">KSh</span>
+                  <input
+                    type="number"
+                    value={editingProduct.original_price || 0}
+                    onChange={(e) => setEditingProduct({...editingProduct, original_price: parseFloat(e.target.value)})}
+                    className="block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-gray-50/50 focus:bg-white"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Colors</label>
+            <input
+              type="text"
+              value={editingProduct.colors || ''}
+              onChange={(e) => setEditingProduct({...editingProduct, colors: e.target.value})}
+              className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-gray-50/50 focus:bg-white"
+              placeholder="e.g. Black, White, Brown, Grey, Blue"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                     <textarea
                       required
                       rows={4}
