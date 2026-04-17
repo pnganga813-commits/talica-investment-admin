@@ -67,7 +67,15 @@ export default function Products() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Ensure colors is always an array to prevent .map errors with legacy data
+      const normalizedProducts = (data || []).map(p => ({
+        ...p,
+        colors: Array.isArray(p.colors) ? p.colors : 
+                (typeof p.colors === 'string' && p.colors ? p.colors.split(',').map((c: string) => c.trim()).filter(Boolean) : [])
+      }));
+      
+      setProducts(normalizedProducts);
     } catch (err: any) {
       console.error('Error fetching products:', err);
       setError(err.message);
@@ -319,6 +327,19 @@ export default function Products() {
                 </div>
                 
                 <p className="mt-2 text-xs md:text-sm text-gray-500 line-clamp-2">{product.description}</p>
+                
+                {Array.isArray(product.colors) && product.colors.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {product.colors.map((color, idx) => (
+                      <span 
+                        key={idx} 
+                        className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-gray-50 text-gray-600 border border-gray-100"
+                      >
+                        {color}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 
                 <div className="mt-4 flex items-center justify-between text-xs md:text-sm">
                   <span className="text-gray-500">
