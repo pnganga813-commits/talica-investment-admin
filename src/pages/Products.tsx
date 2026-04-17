@@ -12,7 +12,7 @@ interface Product {
   original_price?: number;
   has_discount?: boolean;
   condition: string;
-  colors?: string;
+  colors?: string[];
   category: string;
   stock_quantity: number;
   media_url: string;
@@ -200,7 +200,9 @@ export default function Products() {
           original_price: editingProduct.has_discount ? editingProduct.original_price : 0,
           has_discount: editingProduct.has_discount,
           condition: editingProduct.condition,
-          colors: editingProduct.colors,
+          colors: typeof editingProduct.colors === 'string' 
+            ? (editingProduct.colors as string).split(',').map(c => c.trim()).filter(Boolean) 
+            : editingProduct.colors,
           category: editingProduct.category,
           stock_quantity: editingProduct.stock_quantity,
           media_url: photoUrl,
@@ -510,8 +512,8 @@ export default function Products() {
             <label className="block text-sm font-semibold text-gray-700 mb-2">Colors</label>
             <input
               type="text"
-              value={editingProduct.colors || ''}
-              onChange={(e) => setEditingProduct({...editingProduct, colors: e.target.value})}
+              value={Array.isArray(editingProduct.colors) ? editingProduct.colors.join(', ') : editingProduct.colors || ''}
+              onChange={(e) => setEditingProduct({...editingProduct, colors: e.target.value.split(',').map(c => c.trim()).filter(Boolean)})}
               className="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-gray-50/50 focus:bg-white"
               placeholder="e.g. Black, White, Brown, Grey, Blue"
             />

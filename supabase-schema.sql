@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   original_price numeric default 0,
   has_discount boolean default false,
   condition text not null default 'New',
-  colors text default '',
+  colors text[] default '{}',
   category text,
   stock_quantity integer not null default 0,
   media_url text,
@@ -73,17 +73,30 @@ CREATE TABLE IF NOT EXISTS public.products (
 -- Ensure new columns exist if table was created before
 DO $$ 
 BEGIN
+    -- Condition
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='condition') THEN
         ALTER TABLE public.products ADD COLUMN condition text not null default 'New';
     END IF;
+    
+    -- Has Discount
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='has_discount') THEN
         ALTER TABLE public.products ADD COLUMN has_discount boolean default false;
     END IF;
+    
+    -- Original Price
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='original_price') THEN
         ALTER TABLE public.products ADD COLUMN original_price numeric default 0;
     END IF;
+    
+    -- Colors (Handle transition to text[] if it was text)
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='colors') THEN
-        ALTER TABLE public.products ADD COLUMN colors text default '';
+        ALTER TABLE public.products ADD COLUMN colors text[] default '{}';
+    ELSE
+        -- Check if it is already text[]
+        IF (SELECT data_type FROM information_schema.columns WHERE table_name='products' AND column_name='colors') != 'ARRAY' THEN
+            ALTER TABLE public.products ALTER COLUMN colors TYPE text[] USING string_to_array(colors, ',');
+            ALTER TABLE public.products ALTER COLUMN colors SET DEFAULT '{}';
+        END IF;
     END IF;
 END $$;
 

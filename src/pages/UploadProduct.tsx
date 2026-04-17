@@ -124,7 +124,7 @@ export default function UploadProduct() {
             condition,
             has_discount: hasDiscount,
             original_price: hasDiscount ? parseFloat(originalPrice) : 0,
-            colors,
+            colors: colors.split(',').map(c => c.trim()).filter(Boolean),
             media_url: photoUrl,
             video_url: videoUrl,
             created_by: user.id,
